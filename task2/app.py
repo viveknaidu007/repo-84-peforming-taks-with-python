@@ -1,47 +1,36 @@
-from flask import Flask, request, render_template
+import json
 import sqlite3
+from flask import Flask, request, jsonify
 
-# Initialize Flask app
 app = Flask(__name__)
 
-# Define root route for welcome page
-@app.route('/')
-def welcome():
-    return render_template('welcome.html')
+def init_db():
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS users (name TEXT, id INTEGER)''')
+    conn.commit()
+    conn.close()
 
-# Define /addusers endpoint to handle POST and GET requests
-@app.route('/addusers', methods=['POST', 'GET'])
-def add_users():
-    if request.method == 'POST':
-        # Parse form input
-        name = request.form.get('name')
-        id = request.form.get('id')
-
-        # Store data in SQLite database
-        conn = sqlite3.connect('database.db')
-        cursor = conn.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS users (name TEXT, id INTEGER)")
-        cursor.execute("INSERT INTO users (name, id) VALUES (?, ?)", (name, id))
-        conn.commit()
-        conn.close()
-
-        # Query database for names with ids above 5
-        conn = sqlite3.connect('database.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM users WHERE id > 5")
-        result = cursor.fetchall()
-        conn.close()
-
-        # Extract names from result
-        names_above_5 = [row[0] for row in result]
-
-        # Render HTML template with result
-        return render_template('adduser.html', names_above_5=names_above_5)
-
-    elif request.method == 'GET':
-        # If method is GET (initial page load), render HTML template without result
-        return render_template('adduser.html')
+@app.route('/adduser', methods=['POST'])
+def add_user():
+    init_db()
+    data = request.get_json()
+    name = data['name']
+    id = data['id']
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute("INSERT INTO users (name, id) VALUES (?, ?)", (name, id))
+    conn.commit()
+    conn.close()
+    result = {"names_with_ids_above_5": []}
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute("SELECT name FROM users WHERE id > 5")
+    rows = c.fetchall()
+    for row in rows:
+        result["names_with_ids_above_5"].append(row[0])
+    conn.close()
+    return jsonify(result)
 
 if __name__ == '__main__':
-    # Run Flask app
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
