@@ -20,10 +20,10 @@ python app.py
 scp -r -i "yourpenkey.pem" projectfoldername ubuntu@ec ... amazonaws.com:~/
 
 # running in aws server terminal
-sudo apt update
-sudo apt upgrade
-sudo apt install python3-pip
-sudo apt install sqlite3
+ sudo apt update
+ sudo apt upgrade
+ sudo apt install python3-pip
+ sudo apt install sqlite3
 
 # create table if need
 CREATE TABLE IF NOT EXISTS users (name TEXT, id INTEGER);
